@@ -58,6 +58,7 @@ st.header("Údaje o bytech")
 pocet_bytu = st.number_input("Počet bytů:", min_value=1, step=1)
 vystupy = {}
 
+# Data pro jednotlivé byty
 velikosti_bytu = []
 spotreby_tepla = []
 spotreby_studene_vody = []
@@ -65,10 +66,14 @@ spotreby_teple_vody = []
 
 for i in range(int(pocet_bytu)):
     st.subheader(f"Byt {i+1}")
-    velikost = st.number_input(f"Velikost bytu {i+1} (m²):", min_value=0.0, key=f"velikost_{i}")
-    spotreba_tepla = st.number_input(f"Spotřeba tepla bytu {i+1} (dílky):", min_value=0.0, key=f"spotreba_tepla_{i}")
-    spotreba_studene_vody = st.number_input(f"Spotřeba studené vody bytu {i+1} (m³):", min_value=0.0, key=f"spotreba_studena_{i}")
-    spotreba_teple_vody = st.number_input(f"Spotřeba teplé vody bytu {i+1} (m³):", min_value=0.0, key=f"spotreba_tepla_{i}")
+    velikost = st.number_input(
+        f"Velikost bytu {i+1} (m²):", min_value=0.0, key=f"velikost_{i}")
+    spotreba_tepla = st.number_input(
+        f"Spotřeba tepla bytu {i+1} (dílky):", min_value=0.0, key=f"spotreba_tepla_{i}")
+    spotreba_studene_vody = st.number_input(
+        f"Spotřeba studené vody bytu {i+1} (m³):", min_value=0.0, key=f"spotreba_studena_{i}")
+    spotreba_teple_vody = st.number_input(
+        f"Spotřeba teplé vody bytu {i+1} (m³):", min_value=0.0, key=f"spotreba_teple_{i}")
 
     velikosti_bytu.append(velikost)
     spotreby_tepla.append(spotreba_tepla)

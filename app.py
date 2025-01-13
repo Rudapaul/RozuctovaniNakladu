@@ -1,8 +1,8 @@
 import streamlit as st
 from fpdf import FPDF
 
-# Funkce pro výpočet nákladů
-def vypocitat_naklady_vytapeni(celkove_naklady, velikosti_bytu, spotreby, zakladni_podil=40):
+# Funkce pro výpočty
+def vypocitat_naklady(celkove_naklady, velikosti_bytu, spotreby, zakladni_podil):
     zakladni_naklady = (zakladni_podil / 100) * celkove_naklady
     spotrebni_naklady = celkove_naklady - zakladni_naklady
 
@@ -22,34 +22,6 @@ def vypocitat_naklady_vytapeni(celkove_naklady, velikosti_bytu, spotreby, zaklad
     ]
 
     return celkove_naklady_na_byt
-
-def vypocitat_naklady_tepla_voda(celkove_naklady, velikosti_bytu, spotreby, zakladni_podil=30):
-    zakladni_naklady = (zakladni_podil / 100) * celkove_naklady
-    spotrebni_naklady = celkove_naklady - zakladni_naklady
-
-    soucet_velikosti = sum(velikosti_bytu)
-    soucet_spotreby = sum(spotreby)
-
-    zakladni_naklady_rozdelene = [
-        (velikost / soucet_velikosti) * zakladni_naklady for velikost in velikosti_bytu
-    ]
-    spotrebni_naklady_rozdelene = [
-        (spotreba / soucet_spotreby) * spotrebni_naklady for spotreba in spotreby
-    ]
-
-    celkove_naklady_na_byt = [
-        round(zakladni + spotrebni, 2)
-        for zakladni, spotrebni in zip(zakladni_naklady_rozdelene, spotrebni_naklady_rozdelene)
-    ]
-
-    return celkove_naklady_na_byt
-
-def vypocitat_naklady_studena_voda(celkove_naklady, spotreby):
-    soucet_spotreby = sum(spotreby)
-    rozdeleni_nakladu = [
-        round((spotreba / soucet_spotreby) * celkove_naklady, 2) for spotreba in spotreby
-    ]
-    return rozdeleni_nakladu
 
 # Funkce pro generování PDF
 def generovat_protokol(data, nazev="protokol.pdf"):
@@ -68,13 +40,17 @@ def generovat_protokol(data, nazev="protokol.pdf"):
 # Streamlit UI
 st.title("Rozúčtování nákladů na vytápění a vodu podle legislativy")
 
+# Vstupy pro náklady
 st.header("Zadejte roční náklady:")
-celkove_naklady_vytapeni = st.number_input("Celkové roční náklady na vytápění (Kč):", min_value=0.0, step=100.0)
-celkove_naklady_studena_voda = st.number_input("Celkové roční náklady na studenou vodu (Kč):", min_value=0.0, step=100.0)
-celkove_naklady_tepla_voda = st.number_input("Celkové roční náklady na teplou vodu (Kč):", min_value=0.0, step=100.0)
+naklady_UT = st.number_input("Náklady na spotřebu tepla na ÚT (Kč):", min_value=0.0, step=100.0)
+naklady_TV_teplo = st.number_input("Náklady na spotřebu tepla na výrobu TV (Kč):", min_value=0.0, step=100.0)
+naklady_TV_voda = st.number_input("Náklady na spotřebu vody na výrobu TV (Kč):", min_value=0.0, step=100.0)
+naklady_SV = st.number_input("Náklady na spotřebu studené vody (Kč):", min_value=0.0, step=100.0)
 
+# Počet bytů
 pocet_bytu = st.number_input("Počet bytů:", min_value=1, step=1)
 
+# Data pro jednotlivé byty
 velikosti_bytu = []
 spotreby_tepla = []
 spotreby_studene_vody = []
@@ -99,24 +75,28 @@ if st.button("Vypočítat rozúčtování"):
         and len(spotreby_studene_vody) == pocet_bytu
         and len(spotreby_teple_vody) == pocet_bytu
     ):
-        # Výpočty nákladů
-        naklady_teplo = vypocitat_naklady_vytapeni(celkove_naklady_vytapeni, velikosti_bytu, spotreby_tepla)
-        naklady_studena_voda = vypocitat_naklady_studena_voda(celkove_naklady_studena_voda, spotreby_studene_vody)
-        naklady_tepla_voda = vypocitat_naklady_tepla_voda(celkove_naklady_tepla_voda, velikosti_bytu, spotreby_teple_vody)
+        # Výpočty
+        naklady_teplo_UT = vypocitat_naklady(naklady_UT, velikosti_bytu, spotreby_tepla, zakladni_podil=40)
+        naklady_teplo_TV = vypocitat_naklady(naklady_TV_teplo, velikosti_bytu, spotreby_teple_vody, zakladni_podil=30)
+        naklady_studena_voda = vypocitat_naklady(naklady_SV, velikosti_bytu, spotreby_studene_vody, zakladni_podil=50)
+        naklady_voda_TV = vypocitat_naklady(naklady_TV_voda, velikosti_bytu, spotreby_teple_vody, zakladni_podil=30)
 
+        # Výstupy
         st.header("Rozdělení nákladů:")
         data = {}
         for i in range(int(pocet_bytu)):
             st.write(f"Byt {i+1}:")
-            st.write(f" - Náklady na vytápění: {naklady_teplo[i]} Kč")
+            st.write(f" - Náklady na teplo na ÚT: {naklady_teplo_UT[i]} Kč")
+            st.write(f" - Náklady na teplo na výrobu TV: {naklady_teplo_TV[i]} Kč")
             st.write(f" - Náklady na studenou vodu: {naklady_studena_voda[i]} Kč")
-            st.write(f" - Náklady na teplou vodu: {naklady_tepla_voda[i]} Kč")
+            st.write(f" - Náklady na vodu pro výrobu TV: {naklady_voda_TV[i]} Kč")
             st.write("---")
 
             data[f"Byt {i+1}"] = {
-                "Náklady na vytápění": naklady_teplo[i],
+                "Náklady na teplo na ÚT": naklady_teplo_UT[i],
+                "Náklady na teplo na výrobu TV": naklady_teplo_TV[i],
                 "Náklady na studenou vodu": naklady_studena_voda[i],
-                "Náklady na teplou vodu": naklady_tepla_voda[i]
+                "Náklady na vodu pro výrobu TV": naklady_voda_TV[i],
             }
 
         if st.button("Generovat PDF"):

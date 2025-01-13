@@ -52,7 +52,7 @@ soucet_ploch_UT = st.number_input("Součet ploch pro výpočet ÚT (m²):", min_
 soucet_ploch_TV = st.number_input("Součet ploch pro výpočet TV (m²):", min_value=0.0)
 soucet_odectu_ITN = st.number_input("Součet odečtených náměrů ITN (dílky):", min_value=0.0)
 soucet_odectu_SV = st.number_input("Součet odečtených náměrů SV (m³):", min_value=0.0)
-
+soucet_odectu_TV = st.number_input("Součet odečtených náměrů teplé vody (m³):", min_value=0.0)  # Nový řádek
 # Data pro byty
 st.header("Údaje o bytech")
 pocet_bytu = st.number_input("Počet bytů:", min_value=1, step=1)

@@ -1,7 +1,16 @@
 import streamlit as st
 from fpdf import FPDF
+import pandas as pd  # Knihovna pro načítání dat z Excelu
 
-# Funkce pro výpočty
+# Funkce pro načtení Excel souboru
+def nacti_data_z_excelu():
+    uploaded_file = st.file_uploader("Nahrajte Excel soubor s údaji o bytech:", type=["xlsx"])
+    if uploaded_file is not None:
+        data = pd.read_excel(uploaded_file)
+        return data
+    return None
+
+# Funkce pro výpočet nákladů
 def vypocitat_naklady(celkove_naklady, velikosti_bytu, spotreby, zakladni_podil):
     zakladni_naklady = (zakladni_podil / 100) * celkove_naklady
     spotrebni_naklady = celkove_naklady - zakladni_naklady
@@ -29,79 +38,74 @@ def generovat_pdf(vystupy, nazev="rozcuctovani_protokol.pdf"):
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt="Protokol o rozúčtování nákladů", ln=True, align="C")
-
+    
     for byt, data in vystupy.items():
         pdf.cell(200, 10, txt=f"{byt}:", ln=True, align="L")
         for popis, hodnota in data.items():
             pdf.cell(200, 10, txt=f"{popis}: {hodnota}", ln=True, align="L")
+        pdf.cell(200, 10, txt="---", ln=True)
+    
     pdf.output(nazev)
 
 # Streamlit UI
 st.title("Rozúčtování nákladů na vytápění a vodu podle legislativy")
 
-# Vstupy
-st.header("Zadejte údaje o objektu")
-naklady_UT = st.number_input("Náklady na spotřebu tepla na ÚT (Kč):", min_value=0.0)
-naklady_TV_teplo = st.number_input("Náklady na spotřebu tepla na výrobu TV (Kč):", min_value=0.0)
-naklady_TV_voda = st.number_input("Náklady na spotřebu vody na výrobu TV (Kč):", min_value=0.0)
-naklady_SV = st.number_input("Náklady na spotřebu studené vody (Kč):", min_value=0.0)
-zakladni_slozka_UT = st.slider("Poměr základní složky (teplo na ÚT):", 0, 100, 40)
-zakladni_slozka_TV = st.slider("Poměr základní složky (teplo na TV):", 0, 100, 30)
+# Načítání dat z Excelu
+data = nacti_data_z_excelu()
+if data is not None:
+    st.write("Načtená data z Excelu:")
+    st.dataframe(data)
+else:
+    st.header("Zadejte údaje manuálně")
 
-soucet_ploch_UT = st.number_input("Součet ploch pro výpočet ÚT (m²):", min_value=0.0)
-soucet_ploch_TV = st.number_input("Součet ploch pro výpočet TV (m²):", min_value=0.0)
-soucet_odectu_ITN = st.number_input("Součet odečtených náměrů ITN (dílky):", min_value=0.0)
-soucet_odectu_SV = st.number_input("Součet odečtených náměrů SV (m³):", min_value=0.0)
-soucet_odectu_TV = st.number_input("Součet odečtených náměrů teplé vody (m³):", min_value=0.0)  # Nový řádek
-# Data pro byty
-st.header("Údaje o bytech")
-pocet_bytu = st.number_input("Počet bytů:", min_value=1, step=1)
-vystupy = {}
+    # Údaje o objektu
+    st.header("Údaje o objektu")
+    adresa_objektu = st.text_input("Adresa objektu:")
+    mesto_objektu = st.text_input("Město:")
+    psc_objektu = st.text_input("PSČ:")
 
-# Data pro jednotlivé byty
-velikosti_bytu = []
-spotreby_tepla = []
-spotreby_studene_vody = []
-spotreby_teple_vody = []
+    # Údaje o bytech
+    st.header("Údaje o bytech")
+    pocet_bytu = st.number_input("Počet bytů:", min_value=1, step=1)
 
-for i in range(int(pocet_bytu)):
-    st.subheader(f"Byt {i+1}")
-    velikost = st.number_input(
-        f"Velikost bytu {i+1} (m²):", min_value=0.0, key=f"velikost_{i}")
-    spotreba_tepla = st.number_input(
-        f"Spotřeba tepla bytu {i+1} (dílky):", min_value=0.0, key=f"spotreba_tepla_{i}")
-    spotreba_studene_vody = st.number_input(
-        f"Spotřeba studené vody bytu {i+1} (m³):", min_value=0.0, key=f"spotreba_studena_{i}")
-    spotreba_teple_vody = st.number_input(
-        f"Spotřeba teplé vody bytu {i+1} (m³):", min_value=0.0, key=f"spotreba_teple_{i}")
+    velikosti_bytu = []
+    spotreby_tepla = []
+    spotreby_studene_vody = []
+    spotreby_teple_vody = []
+    jmena_odberatelu = []
+    cisla_vodomeru_sv = []
+    cisla_vodomeru_tv = []
+    cisla_indikatoru = []
+    typy_radiatoru = []
+    velikosti_radiatoru = []
+    polohy_bytu = []
 
-    velikosti_bytu.append(velikost)
-    spotreby_tepla.append(spotreba_tepla)
-    spotreby_studene_vody.append(spotreba_studene_vody)
-    spotreby_teple_vody.append(spotreba_teple_vody)
+    for i in range(int(pocet_bytu)):
+        st.subheader(f"Byt {i+1}")
+        velikost = st.number_input(f"Velikost bytu {i+1} (m²):", min_value=0.0, key=f"velikost_{i}")
+        spotreba_tepla = st.number_input(f"Spotřeba tepla bytu {i+1} (dílky):", min_value=0.0, key=f"spotreba_tepla_{i}")
+        spotreba_studene_vody = st.number_input(f"Spotřeba studené vody bytu {i+1} (m³):", min_value=0.0, key=f"spotreba_studena_{i}")
+        spotreba_teple_vody = st.number_input(f"Spotřeba teplé vody bytu {i+1} (m³):", min_value=0.0, key=f"spotreba_tepla_{i}")
+        jmeno_odberatele = st.text_input(f"Jméno odběratele pro byt {i+1}:", key=f"jmeno_{i}")
+        cislo_vodomeru_sv = st.text_input(f"Číslo vodoměru pro studenou vodu (byt {i+1}):", key=f"vodomer_sv_{i}")
+        cislo_vodomeru_tv = st.text_input(f"Číslo vodoměru pro teplou vodu (byt {i+1}):", key=f"vodomer_tv_{i}")
+        cislo_indikatoru = st.text_input(f"Číslo indikátoru na radiátoru (byt {i+1}):", key=f"indikator_{i}")
+        typ_radiatoru = st.text_input(f"Typ radiátoru v bytě {i+1}:", key=f"typ_radiatoru_{i}")
+        velikost_radiatoru = st.text_input(f"Velikost radiátoru v bytě {i+1}:", key=f"velikost_radiatoru_{i}")
+        poloha_bytu = st.text_input(f"Poloha bytu {i+1}:", key=f"poloha_bytu_{i}")
 
-# Výpočet a zobrazení výsledků
+        velikosti_bytu.append(velikost)
+        spotreby_tepla.append(spotreba_tepla)
+        spotreby_studene_vody.append(spotreba_studene_vody)
+        spotreby_teple_vody.append(spotreba_teple_vody)
+        jmena_odberatelu.append(jmeno_odberatele)
+        cisla_vodomeru_sv.append(cislo_vodomeru_sv)
+        cisla_vodomeru_tv.append(cislo_vodomeru_tv)
+        cisla_indikatoru.append(cislo_indikatoru)
+        typy_radiatoru.append(typ_radiatoru)
+        velikosti_radiatoru.append(velikost_radiatoru)
+        polohy_bytu.append(poloha_bytu)
+
+# Výpočet a PDF generování
 if st.button("Vypočítat rozúčtování"):
-    if len(velikosti_bytu) == pocet_bytu:
-        naklady_teplo = vypocitat_naklady(naklady_UT, velikosti_bytu, spotreby_tepla, zakladni_slozka_UT)
-        naklady_tepla_voda = vypocitat_naklady(naklady_TV_teplo, velikosti_bytu, spotreby_teple_vody, zakladni_slozka_TV)
-        naklady_studena_voda = vypocitat_naklady(naklady_SV, velikosti_bytu, spotreby_studene_vody, 0)
-
-        for i in range(pocet_bytu):
-            vystupy[f"Byt {i+1}"] = {
-                "Náklady na teplo": naklady_teplo[i],
-                "Náklady na teplou vodu": naklady_tepla_voda[i],
-                "Náklady na studenou vodu": naklady_studena_voda[i]
-            }
-
-        st.write("Výsledky rozúčtování:")
-        for byt, data in vystupy.items():
-            st.write(byt)
-            for popis, hodnota in data.items():
-                st.write(f"{popis}: {hodnota} Kč")
-
-        # Generování PDF
-        pdf_nazev = generovat_pdf(vystupy)
-        st.download_button("Stáhnout protokol", data=open(pdf_nazev, "rb").read(), file_name=pdf_nazev)
-    else:
-        st.error("Ujistěte se, že jste zadali všechny potřebné údaje.")
+    st.success("Výpočet dokončen. Generování PDF...")

@@ -1,81 +1,167 @@
 import streamlit as st
-import pandas as pd
-from fpdf import FPDF
+import sqlite3
 
-# Titul aplikace
-st.title("Rozúčtování nákladů na vytápění a vodu podle legislativy ČR")
+# Připojení k SQLite databázi
+conn = sqlite3.connect("rozuctovani.db")
+cursor = conn.cursor()
 
-# Sekce: Údaje o objektu
+# Vytvoření tabulek
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS objekt (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    adresa TEXT,
+    mesto TEXT,
+    psc TEXT,
+    naklady_teplo REAL,
+    naklady_tepla_voda REAL,
+    naklady_studena_voda REAL
+)
+""")
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS byty (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    poloha TEXT,
+    velikost REAL,
+    jmeno_najemnika TEXT,
+    namerena_hodnota_tepla REAL,
+    namerena_hodnota_tepla_cena REAL
+)
+""")
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS vodomery (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    byt_id INTEGER,
+    cislo TEXT,
+    typ TEXT, -- "studená" nebo "teplá"
+    mnozstvi REAL,
+    cena REAL,
+    FOREIGN KEY(byt_id) REFERENCES byty(id)
+)
+""")
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS radiatory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    byt_id INTEGER,
+    cislo_indikatoru TEXT,
+    velikost TEXT,
+    namerena_hodnota REAL,
+    FOREIGN KEY(byt_id) REFERENCES byty(id)
+)
+""")
+conn.commit()
+
+# Funkce pro ukládání a načítání dat
+def ulozit_objekt(adresa, mesto, psc, naklady_teplo, naklady_tepla_voda, naklady_studena_voda):
+    cursor.execute("DELETE FROM objekt")  # Umožní přepsat hodnoty
+    cursor.execute("""
+    INSERT INTO objekt (adresa, mesto, psc, naklady_teplo, naklady_tepla_voda, naklady_studena_voda)
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (adresa, mesto, psc, naklady_teplo, naklady_tepla_voda, naklady_studena_voda))
+    conn.commit()
+
+def nacti_objekt():
+    cursor.execute("SELECT * FROM objekt")
+    return cursor.fetchone()
+
+def ulozit_byt(poloha, velikost, jmeno, namerena_teplo, cena_tepla):
+    cursor.execute("""
+    INSERT INTO byty (poloha, velikost, jmeno_najemnika, namerena_hodnota_tepla, namerena_hodnota_tepla_cena)
+    VALUES (?, ?, ?, ?, ?)
+    """, (poloha, velikost, jmeno, namerena_teplo, cena_tepla))
+    conn.commit()
+    return cursor.lastrowid
+
+def ulozit_vodomer(byt_id, cislo, typ, mnozstvi, cena):
+    cursor.execute("""
+    INSERT INTO vodomery (byt_id, cislo, typ, mnozstvi, cena)
+    VALUES (?, ?, ?, ?, ?)
+    """, (byt_id, cislo, typ, mnozstvi, cena))
+    conn.commit()
+
+def ulozit_radiator(byt_id, cislo_indikatoru, velikost, namerena_hodnota):
+    cursor.execute("""
+    INSERT INTO radiatory (byt_id, cislo_indikatoru, velikost, namerena_hodnota)
+    VALUES (?, ?, ?, ?)
+    """, (byt_id, cislo_indikatoru, velikost, namerena_hodnota))
+    conn.commit()
+
+def nacti_byty():
+    cursor.execute("SELECT * FROM byty")
+    return cursor.fetchall()
+
+def nacti_vodomery(byt_id):
+    cursor.execute("SELECT * FROM vodomery WHERE byt_id = ?", (byt_id,))
+    return cursor.fetchall()
+
+def nacti_radiatory(byt_id):
+    cursor.execute("SELECT * FROM radiatory WHERE byt_id = ?", (byt_id,))
+    return cursor.fetchall()
+
+# Výpočet nákladů na vytápění
+def vypocitat_naklady_teplo(naklady_teplo, velikosti_bytu, namerene_hodnoty):
+    zakladni_slozka = 0.4 * naklady_teplo
+    spotrebni_slozka = 0.6 * naklady_teplo
+
+    # Výpočet základní složky podle velikosti bytu
+    soucet_velikosti = sum(velikosti_bytu)
+    zakladni_naklady = [
+        (velikost / soucet_velikosti) * zakladni_slozka for velikost in velikosti_bytu
+    ]
+
+    # Výpočet spotřební složky podle naměřených hodnot tepla
+    soucet_hodnot = sum(namerene_hodnoty)
+    spotrebni_naklady = [
+        (hodnota / soucet_hodnot) * spotrebni_slozka for hodnota in namerene_hodnoty
+    ]
+
+    # Celkové náklady na teplo pro každý byt
+    celkove_naklady = [
+        round(zakladni + spotrebni, 2)
+        for zakladni, spotrebni in zip(zakladni_naklady, spotrebni_naklady)
+    ]
+
+    return celkove_naklady
+
+# Streamlit aplikace
+st.title("Rozúčtování nákladů na vytápění a vodu")
+
+# Formulář pro zadání údajů o objektu
 st.header("Údaje o objektu")
-adresa_objektu = st.text_input("Adresa objektu:")
-mesto = st.text_input("Město:")
-psc = st.text_input("PSČ:")
+ulozeny_objekt = nacti_objekt() or ("", "", "", 0.0, 0.0, 0.0)
+adresa = st.text_input("Adresa objektu:", value=ulozeny_objekt[0])
+mesto = st.text_input("Město:", value=ulozeny_objekt[1])
+psc = st.text_input("PSČ:", value=ulozeny_objekt[2])
+naklady_teplo = st.number_input("Celkové roční náklady na vytápění (Kč):", min_value=0.0, value=ulozeny_objekt[3])
+naklady_tepla_voda = st.number_input("Celkové roční náklady na teplou vodu (Kč):", min_value=0.0, value=ulozeny_objekt[4])
+naklady_studena_voda = st.number_input("Celkové roční náklady na studenou vodu (Kč):", min_value=0.0, value=ulozeny_objekt[5])
 
-# Sekce: Roční náklady
-st.header("Roční náklady")
-naklady_tepla_ut = st.number_input("Náklady na spotřebu tepla na ÚT (Kč):", min_value=0.0, step=100.0)
-naklady_tepla_tv = st.number_input("Náklady na spotřebu tepla na výrobu TV (Kč):", min_value=0.0, step=100.0)
-naklady_vody_tv = st.number_input("Náklady na spotřebu vody na výrobu TV (Kč):", min_value=0.0, step=100.0)
-naklady_studena_voda = st.number_input("Náklady na spotřebu studené vody (Kč):", min_value=0.0, step=100.0)
-naklady_celkem = naklady_tepla_ut + naklady_tepla_tv + naklady_vody_tv + naklady_studena_voda
+if st.button("Uložit údaje o objektu"):
+    ulozit_objekt(adresa, mesto, psc, naklady_teplo, naklady_tepla_voda, naklady_studena_voda)
+    st.success("Údaje o objektu byly uloženy!")
 
-# Sekce: Výpočetní údaje
-st.header("Výpočetní údaje")
-zakladni_slozka_ut = st.number_input("Základní složka - teplo na ÚT (Kč):", min_value=0.0, step=100.0)
-zakladni_slozka_tv = st.number_input("Základní složka - teplo na výrobu TV (Kč):", min_value=0.0, step=100.0)
-soucet_ploch_tv = st.number_input("Součet ploch pro výpočet TV v objektu (m²):", min_value=0.0, step=1.0)
-soucet_itn = st.number_input("Součet odečtených náměrů ITN v objektu (dílky):", min_value=0.0, step=1.0)
-soucet_sv = st.number_input("Součet odečtených náměrů SV v objektu (m³):", min_value=0.0, step=1.0)
-zakladni_podil_teplo = st.slider("Poměr základní a spotřební složky (teplo):", min_value=0, max_value=100, value=40)
-zakladni_podil_tv = st.slider("Poměr základní a spotřební složky (TV):", min_value=0, max_value=100, value=30)
+# Zadání dat pro byty
+st.header("Přidat nový byt")
+poloha = st.text_input("Poloha bytu:")
+velikost = st.number_input("Velikost bytu (m²):", min_value=0.0)
+jmeno = st.text_input("Jméno nájemníka:")
+namerena_teplo = st.number_input("Naměřené hodnoty tepla (počet dílků):", min_value=0.0)
+cena_tepla = 0  # Bude vypočítáno po rozdělení nákladů
 
-# Sekce: Údaje o bytech
-st.header("Údaje o bytech")
-pocet_bytu = st.number_input("Počet bytů:", min_value=1, step=1)
+# Uložení dat o bytě
+if st.button("Uložit byt"):
+    byt_id = ulozit_byt(poloha, velikost, jmeno, namerena_teplo, cena_tepla)
+    st.success("Byt byl úspěšně uložen!")
 
-# Uchovávání údajů o bytech
-byty_data = []
+# Zobrazení dat a výpočet nákladů
+st.header("Výpočet a zobrazení uložených dat")
+byty = nacti_byty()
+velikosti = [byt[2] for byt in byty]
+namerene_hodnoty = [byt[4] for byt in byty]
 
-# Sběr údajů o bytech
-for i in range(int(pocet_bytu)):
-    st.subheader(f"Byt {i+1}")
-    velikost_bytu = st.number_input(f"Velikost bytu {i+1} (m²):", min_value=0.0, step=1.0, key=f"velikost_{i}")
-    spotreba_tepla = st.number_input(f"Spotřeba tepla bytu {i+1} (dílky):", min_value=0.0, step=1.0, key=f"spotreba_tepla_{i}")
-    spotreba_studene_vody = st.number_input(f"Spotřeba studené vody bytu {i+1} (m³):", min_value=0.0, step=1.0, key=f"spotreba_studene_{i}")
-    spotreba_teple_vody = st.number_input(f"Spotřeba teplé vody bytu {i+1} (m³):", min_value=0.0, step=1.0, key=f"spotreba_teple_{i}")
-    jmeno_odberatele = st.text_input(f"Jméno odběratele pro byt {i+1}:", key=f"jmeno_odberatele_{i}")
-    cislo_vodomeru_sv = st.text_input(f"Číslo vodoměru pro studenou vodu (byt {i+1}):", key=f"vodomer_sv_{i}")
-    cislo_vodomeru_tv = st.text_input(f"Číslo vodoměru pro teplou vodu (byt {i+1}):", key=f"vodomer_tv_{i}")
-    poloha_bytu = st.text_input(f"Poloha bytu {i+1}:", key=f"poloha_bytu_{i}")
-    
-    # Dynamické zadání radiátorů
-    pocet_radiatoru = st.number_input(f"Počet radiátorů v bytě {i+1}:", min_value=1, step=1, key=f"pocet_radiatoru_{i}")
-    radiatory = []
-    for r in range(int(pocet_radiatoru)):
-        st.text(f"Radiátor {r+1} v bytě {i+1}:")
-        cislo_indikatoru = st.text_input(f"Číslo indikátoru na radiátoru {r+1} (byt {i+1}):", key=f"indikator_{i}_{r}")
-        typ_radiatoru = st.text_input(f"Typ radiátoru {r+1} (byt {i+1}):", key=f"typ_radiatoru_{i}_{r}")
-        velikost_radiatoru = st.text_input(f"Velikost radiátoru {r+1} (byt {i+1}):", key=f"velikost_radiatoru_{i}_{r}")
-        radiatory.append({
-            "cislo_indikatoru": cislo_indikatoru,
-            "typ_radiatoru": typ_radiatoru,
-            "velikost_radiatoru": velikost_radiatoru
-        })
-    
-    # Ukládání dat
-    byty_data.append({
-        "velikost_bytu": velikost_bytu,
-        "spotreba_tepla": spotreba_tepla,
-        "spotreba_studene_vody": spotreba_studene_vody,
-        "spotreba_teple_vody": spotreba_teple_vody,
-        "jmeno_odberatele": jmeno_odberatele,
-        "cislo_vodomeru_sv": cislo_vodomeru_sv,
-        "cislo_vodomeru_tv": cislo_vodomeru_tv,
-        "poloha_bytu": poloha_bytu,
-        "radiatory": radiatory
-    })
-
-# Výstup výsledků
-if st.button("Vypočítat rozúčtování"):
-    st.success("Výpočet dokončen. Data můžete nyní exportovat do PDF.")
-    st.download_button("Stáhnout PDF", data="PDF Data Placeholder", file_name="rozuctovani.pdf")
+if byty:
+    st.subheader("Náklady na vytápění")
+    rozdeleni_tepla = vypocitat_naklady_teplo(naklady_teplo, velikosti, namerene_hodnoty)
+    for byt, naklad in zip(byty, rozdeleni_tepla):
+        st.write(f"Byt {byt[1]} ({byt[3]}): Náklady na teplo: {naklad} Kč")
+else:
+    st.write("Zatím nejsou uložena žádná data.")

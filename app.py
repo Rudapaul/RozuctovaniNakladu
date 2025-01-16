@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
+from fpdf import FPDF
 
-# ----------------------------- Hlavní data -----------------------------
+# Hlavní nastavení aplikace
 st.title("Rozúčtování nákladů na vytápění a vodu podle legislativy ČR")
-st.header("Hlavní data")
 
+# Hlavní data
+st.header("Hlavní data")
 hlavni_data = {
     "Adresa objektu": "Ve smečkách 592/22",
     "PSČ": "11000 Praha 1",
@@ -14,99 +16,70 @@ hlavni_data = {
     "Náklady na spotřebu studené vody (Kč)": 249836,
     "Náklady celkem (Kč)": 1290926,
 }
+st.write(hlavni_data)
 
-st.json(hlavni_data)
-
-# ----------------------------- Data o bytech -----------------------------
+# Zobrazení předvyplněných dat o bytech
 st.header("Data o bytech")
-data_byty = [
-    {"Číslo bytu": 1, "Poloha": "4P/L", "Jméno bytu": "Ilona", "Plocha (m2)": 93},
-    {"Číslo bytu": 2, "Poloha": "PK/L", "Jméno bytu": "Brada", "Plocha (m2)": 39},
-    {"Číslo bytu": 3, "Poloha": "PK/S", "Jméno bytu": "Taras", "Plocha (m2)": 68},
-    {"Číslo bytu": 4, "Poloha": "PK/PO", "Jméno bytu": "Natty", "Plocha (m2)": 56},
-    {"Číslo bytu": 5, "Poloha": "1P/PO", "Jméno bytu": "Jóga 1 patro", "Plocha (m2)": 62},
-    {"Číslo bytu": 6, "Poloha": "3P/PO", "Jméno bytu": "Šatny 3p", "Plocha (m2)": 45},
-    {"Číslo bytu": 7, "Poloha": "3P/PO", "Jméno bytu": "Jóga 3p malá", "Plocha (m2)": 73},
-    {"Číslo bytu": 8, "Poloha": "3P/PO", "Jméno bytu": "Jóga 3p do ulice", "Plocha (m2)": 122},
-    {"Číslo bytu": 9, "Poloha": "3P/L", "Jméno bytu": "Jóga 3p velká", "Plocha (m2)": 303},
-    {"Číslo bytu": 10, "Poloha": "3P/L", "Jméno bytu": "Kancl 3p do ulice", "Plocha (m2)": 42},
-    {"Číslo bytu": 11, "Poloha": "2P/S", "Jméno bytu": "2 patro do ulice", "Plocha (m2)": 166},
-    {"Číslo bytu": 12, "Poloha": "1P/S", "Jméno bytu": "Studio", "Plocha (m2)": 696},
-    {"Číslo bytu": 13, "Poloha": "PR/L", "Jméno bytu": "Little Bali", "Plocha (m2)": 343},
-    {"Číslo bytu": 14, "Poloha": "PR/PO", "Jméno bytu": "Kytky", "Plocha (m2)": 111},
-    {"Číslo bytu": 15, "Poloha": "2P/S", "Jméno bytu": "2 patro do zah.", "Plocha (m2)": 116},
-    {"Číslo bytu": 16, "Poloha": "PR/PO", "Jméno bytu": "David", "Plocha (m2)": 457},
-    {"Číslo bytu": 17, "Poloha": "4P/PO", "Jméno bytu": "Michal", "Plocha (m2)": 128},
-    {"Číslo bytu": 18, "Poloha": "1P/PO", "Jméno bytu": "Babča", "Plocha (m2)": 110},
-]
+data_byty = pd.DataFrame({
+    "Číslo bytu": [1, 2, 3, 4, 5],
+    "Poloha": ["4P/L", "PK/L", "PK/S", "PK/PO", "1P/PO"],
+    "Jméno bytu": ["Ilona", "Brada", "Taras", "Natty", "Joga 1 patro"],
+    "Velikost (m2)": [93, 39, 68, 56, 62],
+    "Počet radiátorů": [4, 2, 3, 4, 3],
+})
+edited_byty = st.experimental_data_editor(data_byty, num_rows="dynamic")
 
-# Zobrazení a úprava dat v interaktivní tabulce
-df_byty = pd.DataFrame(data_byty)
-st.dataframe(df_byty)
-
-# ----------------------------- Odečty tepla -----------------------------
+# Zobrazení a úpravy odečtů tepla
 st.header("Odečty tepla")
-data_tepla = [
-    {"Číslo bytu": 1, "Typ a velikost radiátoru": "22/500x1000", "VČ-radio": 33834458, "Typ média": "HCA", "Aktuální hodnota": 1048},
-    {"Číslo bytu": 1, "Typ a velikost radiátoru": "22/500x1000", "VČ-radio": 33834459, "Typ média": "HCA", "Aktuální hodnota": 1811},
-    # Další data...
-]
+data_teplo = pd.DataFrame({
+    "Číslo bytu": [1, 2, 3, 4, 5],
+    "Typ a velikost radiátoru": ["22/500x1000", "22/600x1000", "22/600x600", "22/600x1000", "22/600x1200"],
+    "VČ-radio": [33834458, 4957573, 4530926, 4957555, 33834455],
+    "Aktuální hodnota": [1048, 415, 734, 497, 202],
+})
+edited_teplo = st.experimental_data_editor(data_teplo, num_rows="dynamic")
 
-df_tepla = pd.DataFrame(data_tepla)
-st.header("Odpočty tepla")
-st.dataframe(df_tepla)
-
-# ----------------------------- Odečty vody -----------------------------
+# Zobrazení a úpravy odečtů vody
 st.header("Odečty vody")
-data_voda = [
-    {"Číslo bytu": 1, "Poloha": "4P/L", "Typ média": "TV", "Objem m3": 58.245, "VČ vodoměru": 33834458},
-    {"Číslo bytu": 1, "Poloha": "4P/L", "Typ média": "SV", "Objem m3": 63.587, "VČ vodoměru": 33834458},
-    # Další data...
-]
-
-df_voda = pd.DataFrame(data_voda)
-edited_voda = st.experimental_data_editor(df_voda, num_rows="dynamic")
-
-# ----------------------------- Generování protokolů -----------------------------
-st.header("Generování protokolů")
-for byt in edited_byty.to_dict(orient="records"):
-    st.subheader(f"Protokol pro byt {byt['Číslo bytu']} - {byt['Jméno bytu']}")
-    st.write(f"Poloha: {byt['Poloha']}")
-    st.write(f"Plocha: {byt['Plocha (m2)']} m2")
-
-    # Přidání údajů o teple
-    tepla = edited_tepla[edited_tepla["Číslo bytu"] == byt["Číslo bytu"]]
-    st.write("Odečty tepla:")
-    st.table(tepla)
-
-    # Přidání údajů o vodě
-    voda = edited_voda[edited_voda["Číslo bytu"] == byt["Číslo bytu"]]
-    st.write("Odečty vody:")
-    st.table(voda)
-    from fpdf import FPDF
+data_voda = pd.DataFrame({
+    "Číslo bytu": [1, 2, 3, 4, 5],
+    "Typ média": ["TV", "SV", "TV", "SV", "TV"],
+    "Objem (m3)": [58.245, 46.566, 31.926, 15.421, 3.148],
+    "VČ vodoměru": [33834458, 4975034, 4530926, 4975637, 33834455],
+})
+edited_voda = st.experimental_data_editor(data_voda, num_rows="dynamic")
 
 # Funkce pro vytvoření PDF protokolu
-def vytvorit_pdf(protokoly):
+def vytvorit_pdf(data_byty, data_teplo, data_voda):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    for protokol in protokoly:
+    for _, row in data_byty.iterrows():
         pdf.add_page()
         pdf.set_font("Arial", size=12)
-        
         pdf.cell(200, 10, txt="Protokol o rozúčtování nákladů", ln=True, align="C")
         pdf.ln(10)
 
-        pdf.cell(100, 10, txt=f"Číslo bytu: {protokol['Číslo bytu']}", ln=True)
-        pdf.cell(100, 10, txt=f"Poloha: {protokol['Poloha']}", ln=True)
-        pdf.cell(100, 10, txt=f"Jméno bytu: {protokol['Jméno bytu']}", ln=True)
-        pdf.cell(100, 10, txt=f"Velikost bytu (m²): {protokol['Velikost (m2)']:.2f}", ln=True)
+        # Informace o bytě
+        pdf.cell(100, 10, txt=f"Číslo bytu: {row['Číslo bytu']}", ln=True)
+        pdf.cell(100, 10, txt=f"Poloha: {row['Poloha']}", ln=True)
+        pdf.cell(100, 10, txt=f"Jméno bytu: {row['Jméno bytu']}", ln=True)
+        pdf.cell(100, 10, txt=f"Velikost (m²): {row['Velikost (m2)']}", ln=True)
+        pdf.cell(100, 10, txt=f"Počet radiátorů: {row['Počet radiátorů']}", ln=True)
         pdf.ln(5)
 
-        pdf.cell(100, 10, txt="Náklady:", ln=True)
-        pdf.cell(100, 10, txt=f"  Náklady na vytápění (Kč): {protokol['Náklady na vytápění (Kč)']:.2f}", ln=True)
-        pdf.cell(100, 10, txt=f"  Náklady na teplou vodu (Kč): {protokol['Náklady na teplou vodu (Kč)']:.2f}", ln=True)
-        pdf.cell(100, 10, txt=f"  Náklady na studenou vodu (Kč): {protokol['Náklady na studenou vodu (Kč)']:.2f}", ln=True)
+        # Odečty tepla
+        pdf.cell(100, 10, txt="Odečty tepla:", ln=True)
+        teplo = data_teplo[data_teplo["Číslo bytu"] == row["Číslo bytu"]]
+        for _, trow in teplo.iterrows():
+            pdf.cell(100, 10, txt=f"  Radiátor: {trow['Typ a velikost radiátoru']}, Hodnota: {trow['Aktuální hodnota']}", ln=True)
+
+        # Odečty vody
+        pdf.ln(5)
+        pdf.cell(100, 10, txt="Odečty vody:", ln=True)
+        voda = data_voda[data_voda["Číslo bytu"] == row["Číslo bytu"]]
+        for _, vrow in voda.iterrows():
+            pdf.cell(100, 10, txt=f"  Vodoměr: {vrow['VČ vodoměru']}, Objem: {vrow['Objem (m3)']} m3", ln=True)
 
         pdf.ln(10)
         pdf.cell(200, 10, txt="------------------------------", ln=True, align="C")
@@ -115,49 +88,10 @@ def vytvorit_pdf(protokoly):
     return pdf
 
 # Tlačítko pro export PDF
-if st.button("Exportovat protokol do PDF"):
-    pdf = vytvorit_pdf(protokoly)
+if st.button("Generovat PDF protokoly"):
+    pdf = vytvorit_pdf(edited_byty, edited_teplo, edited_voda)
     pdf_file = "protokoly.pdf"
     pdf.output(pdf_file)
-    st.success(f"PDF exportováno jako {pdf_file}.")
-    with open(pdf_file, "rb") as f:
-    
-    from fpdf import FPDF
-
-# Funkce pro vytvoření PDF protokolu
-def vytvorit_pdf(protokoly):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-
-    for protokol in protokoly:
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        
-        pdf.cell(200, 10, txt="Protokol o rozúčtování nákladů", ln=True, align="C")
-        pdf.ln(10)
-
-        pdf.cell(100, 10, txt=f"Číslo bytu: {protokol['Číslo bytu']}", ln=True)
-        pdf.cell(100, 10, txt=f"Poloha: {protokol['Poloha']}", ln=True)
-        pdf.cell(100, 10, txt=f"Jméno bytu: {protokol['Jméno bytu']}", ln=True)
-        pdf.cell(100, 10, txt=f"Velikost bytu (m²): {protokol['Velikost (m2)']:.2f}", ln=True)
-        pdf.ln(5)
-
-        pdf.cell(100, 10, txt="Náklady:", ln=True)
-        pdf.cell(100, 10, txt=f"  Náklady na vytápění (Kč): {protokol['Náklady na vytápění (Kč)']:.2f}", ln=True)
-        pdf.cell(100, 10, txt=f"  Náklady na teplou vodu (Kč): {protokol['Náklady na teplou vodu (Kč)']:.2f}", ln=True)
-        pdf.cell(100, 10, txt=f"  Náklady na studenou vodu (Kč): {protokol['Náklady na studenou vodu (Kč)']:.2f}", ln=True)
-
-        pdf.ln(10)
-        pdf.cell(200, 10, txt="------------------------------", ln=True, align="C")
-        pdf.ln(10)
-
-    return pdf
-
-# Tlačítko pro export PDF
-if st.button("Exportovat protokol do PDF"):
-    pdf = vytvorit_pdf(protokoly)
-    pdf_file = "protokoly.pdf"
-    pdf.output(pdf_file)
-    st.success(f"PDF exportováno jako {pdf_file}.")
+    st.success(f"PDF bylo úspěšně vytvořeno jako {pdf_file}.")
     with open(pdf_file, "rb") as f:
         st.download_button("Stáhnout PDF", f, file_name=pdf_file)

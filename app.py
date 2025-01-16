@@ -14,47 +14,52 @@ hlavni_data = {
     "Náklady na spotřebu studené vody (Kč)": 249836,
     "Náklady celkem (Kč)": 1290926,
 }
-st.write(hlavni_data)
+st.json(hlavni_data)
 
 # Data o bytech
 st.header("Data o bytech")
 data_byty = [
     {"Číslo bytu": 1, "Poloha": "4P/L", "Jméno bytu": "Ilona", "Plocha m2": 93},
     {"Číslo bytu": 2, "Poloha": "PK/L", "Jméno bytu": "Brada", "Plocha m2": 39},
-    # Přidejte další byty podle potřeby...
+    {"Číslo bytu": 3, "Poloha": "PK/S", "Jméno bytu": "Taras", "Plocha m2": 68},
+    {"Číslo bytu": 4, "Poloha": "PK/PO", "Jméno bytu": "Natty", "Plocha m2": 56},
+    {"Číslo bytu": 5, "Poloha": "1P/PO", "Jméno bytu": "Joga 1 patro", "Plocha m2": 62},
+    {"Číslo bytu": 6, "Poloha": "3P/PO", "Jméno bytu": "Šatny 3p", "Plocha m2": 45},
+    {"Číslo bytu": 7, "Poloha": "3P/PO", "Jméno bytu": "Joga 3p malá", "Plocha m2": 73},
+    {"Číslo bytu": 8, "Poloha": "3P/PO", "Jméno bytu": "Joga 3p do ulice", "Plocha m2": 122},
+    {"Číslo bytu": 9, "Poloha": "3P/L", "Jméno bytu": "Joga 3p velká", "Plocha m2": 303},
+    {"Číslo bytu": 10, "Poloha": "3P/L", "Jméno bytu": "Kancl 3p do ulice", "Plocha m2": 42},
+    {"Číslo bytu": 11, "Poloha": "2P/S", "Jméno bytu": "2 patro do ulice", "Plocha m2": 166},
+    {"Číslo bytu": 12, "Poloha": "1P/S", "Jméno bytu": "Studio", "Plocha m2": 696},
+    {"Číslo bytu": 13, "Poloha": "PR/L", "Jméno bytu": "Little Bali", "Plocha m2": 343},
+    {"Číslo bytu": 14, "Poloha": "PR/PO", "Jméno bytu": "Kytky", "Plocha m2": 111},
+    {"Číslo bytu": 15, "Poloha": "2P/PO", "Jméno bytu": "2 patro do zahrady", "Plocha m2": 116},
+    {"Číslo bytu": 16, "Poloha": "PR/PO", "Jméno bytu": "David", "Plocha m2": 457},
+    {"Číslo bytu": 17, "Poloha": "4P/PO", "Jméno bytu": "Michal", "Plocha m2": 128},
+    {"Číslo bytu": 18, "Poloha": "1P/PO", "Jméno bytu": "Babča", "Plocha m2": 110},
 ]
 df_byty = pd.DataFrame(data_byty)
-edited_byty = st.experimental_data_editor(df_byty, num_rows="dynamic")
+st.table(df_byty)
 
 # Odečty tepla
 st.header("Odečty tepla")
 data_tepla = [
     {"Číslo bytu": 1, "Typ a velikost radiátoru": "22/500x1000", "VČ-radio": 33834458, "Typ média": "HCA", "Aktuální hodnota": 1048},
     {"Číslo bytu": 2, "Typ a velikost radiátoru": "22/600x1000", "VČ-radio": 33834487, "Typ média": "HCA", "Aktuální hodnota": 415},
-    # Přidejte další odečty...
+    # Vložte všechna data o radiátorech...
 ]
 df_tepla = pd.DataFrame(data_tepla)
-edited_tepla = st.experimental_data_editor(df_tepla, num_rows="dynamic")
+st.table(df_tepla)
 
 # Odečty vody
 st.header("Odečty vody")
 data_vody = [
     {"Číslo bytu": 1, "VČ vodoměru": 33834458, "Typ média": "TV", "Objem m3": 58.245},
     {"Číslo bytu": 2, "VČ vodoměru": 4957573, "Typ média": "TV", "Objem m3": 28.369},
-    # Přidejte další odečty...
+    # Vložte všechna data o vodoměrech...
 ]
 df_vody = pd.DataFrame(data_vody)
-edited_vody = st.experimental_data_editor(df_vody, num_rows="dynamic")
-
-# Uložení dat
-if st.button("Uložit data"):
-    st.success("Data byla uložena.")
-    st.write("Byty:")
-    st.write(edited_byty)
-    st.write("Odečty tepla:")
-    st.write(edited_tepla)
-    st.write("Odečty vody:")
-    st.write(edited_vody)
+st.table(df_vody)
 
 # Generování PDF protokolu
 st.header("Generování protokolu")
@@ -64,25 +69,25 @@ if st.button("Generovat PDF"):
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt="Protokol o rozúčtování nákladů", ln=True, align="C")
     
-    # Přidání hlavních dat
-    pdf.cell(200, 10, txt="Hlavní data:", ln=True, align="L")
+    # Hlavní data
+    pdf.cell(200, 10, txt="Hlavní data:", ln=True)
     for key, value in hlavni_data.items():
-        pdf.cell(200, 10, txt=f"{key}: {value}", ln=True, align="L")
+        pdf.cell(200, 10, txt=f"{key}: {value}", ln=True)
     
-    # Přidání dat o bytech
-    pdf.cell(200, 10, txt="Data o bytech:", ln=True, align="L")
-    for _, row in edited_byty.iterrows():
-        pdf.cell(200, 10, txt=f"Byt {row['Číslo bytu']} - {row['Jméno bytu']} ({row['Poloha']}): {row['Plocha m2']} m2", ln=True, align="L")
+    # Data o bytech
+    pdf.cell(200, 10, txt="Data o bytech:", ln=True)
+    for _, row in df_byty.iterrows():
+        pdf.cell(200, 10, txt=f"Byt {row['Číslo bytu']} - {row['Jméno bytu']} ({row['Poloha']}): {row['Plocha m2']} m2", ln=True)
     
-    # Přidání odečtů tepla
-    pdf.cell(200, 10, txt="Odečty tepla:", ln=True, align="L")
-    for _, row in edited_tepla.iterrows():
-        pdf.cell(200, 10, txt=f"Byt {row['Číslo bytu']} - Radiátor {row['Typ a velikost radiátoru']} ({row['Typ média']}): {row['Aktuální hodnota']} jednotek", ln=True, align="L")
+    # Odečty tepla
+    pdf.cell(200, 10, txt="Odečty tepla:", ln=True)
+    for _, row in df_tepla.iterrows():
+        pdf.cell(200, 10, txt=f"Byt {row['Číslo bytu']} - Radiátor {row['Typ a velikost radiátoru']} ({row['Typ média']}): {row['Aktuální hodnota']} jednotek", ln=True)
     
-    # Přidání odečtů vody
-    pdf.cell(200, 10, txt="Odečty vody:", ln=True, align="L")
-    for _, row in edited_vody.iterrows():
-        pdf.cell(200, 10, txt=f"Byt {row['Číslo bytu']} - Vodoměr {row['VČ vodoměru']} ({row['Typ média']}): {row['Objem m3']} m3", ln=True, align="L")
+    # Odečty vody
+    pdf.cell(200, 10, txt="Odečty vody:", ln=True)
+    for _, row in df_vody.iterrows():
+        pdf.cell(200, 10, txt=f"Byt {row['Číslo bytu']} - Vodoměr {row['VČ vodoměru']} ({row['Typ média']}): {row['Objem m3']} m3", ln=True)
     
     # Uložení PDF
     pdf_file = "protokol.pdf"

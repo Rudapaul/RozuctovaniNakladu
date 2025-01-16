@@ -185,9 +185,9 @@ if st.button("Uložit data"):
     st.dataframe(edited_df)
 
 st.write("Doplňte další informace o spotřebě, radiátorech a nákladech.")
-    # Data o bytech
+# Data o bytech
 data_bytu = []
-    for i in range(pocet_bytu):
+for i in range(pocet_bytu):
         st.subheader(f"Byt {i + 1}")
         byt = {}
         byt["Poloha"] = st.text_input(f"Poloha bytu {i + 1}")

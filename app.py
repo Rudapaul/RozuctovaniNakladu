@@ -196,6 +196,6 @@ for i in range(pocet_bytu):
         byt["Počet radiátorů"] = st.number_input(f"Počet radiátorů v bytě {i + 1}", min_value=1, step=1)
         data_bytu.append(byt)
 
-    if st.button("Uložit data"):
+if st.button("Uložit data"):
         st.success("Data byla uložena.")
         st.write(data_bytu)

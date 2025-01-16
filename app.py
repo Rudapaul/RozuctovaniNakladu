@@ -151,6 +151,40 @@ else:
     psc = st.text_input("PSČ")
     pocet_bytu = st.number_input("Počet bytů", min_value=1, step=1)
 
+import streamlit as st
+import pandas as pd
+
+# Předvyplněná data
+data = {
+    "Číslo bytu": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+    "Poloha": [
+        "4P/L", "PK/L", "PK/S", "PK/PO", "1P/PO", "3P/PO", "3P/PO", "3P/PO", 
+        "3P/L", "3P/L", "2P/S", "1P/S", "PR/L", "PR/PO", "2P/S", "PR/PO", "4P/PO", "1P/PO"
+    ],
+    "Jméno nájemníka": [
+        "Ilona", "Brada", "Taras", "Natty", "Jóga 1p do ulice", "Šatny 3p", 
+        "Jóga 3p malá", "Jóga 3p do ulice", "Jóga 3p velká", "Kancl 3p do ulice", 
+        "2 patro do ulice", "Studio", "Little Bali", "Kytky", "2 patro do zahrady", 
+        "David", "Michal", "Babička"
+    ]
+}
+
+# Vytvoření dataframe
+df_byty = pd.DataFrame(data)
+
+# Aplikace Streamlit
+st.title("Rozúčtování nákladů na vytápění a vodu podle legislativy ČR")
+
+# Zobrazení předvyplněné tabulky
+st.header("Předvyplněná data o bytech")
+edited_df = st.experimental_data_editor(df_byty, num_rows="dynamic")
+
+# Uložení upravené tabulky
+if st.button("Uložit data"):
+    st.write("Aktualizovaná data:")
+    st.dataframe(edited_df)
+
+st.write("Doplňte další informace o spotřebě, radiátorech a nákladech.")
     # Data o bytech
     data_bytu = []
     for i in range(pocet_bytu):

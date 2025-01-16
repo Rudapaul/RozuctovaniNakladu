@@ -53,7 +53,8 @@ data_tepla = [
 ]
 
 df_tepla = pd.DataFrame(data_tepla)
-edited_tepla = st.experimental_data_editor(df_tepla, num_rows="dynamic")
+st.header("Odpočty tepla")
+st.dataframe(df_tepla)
 
 # ----------------------------- Odečty vody -----------------------------
 st.header("Odečty vody")

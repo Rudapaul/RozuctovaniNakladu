@@ -120,4 +120,3 @@ if st.button("Generovat PDF"):
         data=pdf_content,
         file_name="rozuctovani.pdf",
         mime="application/pdf",
-    )

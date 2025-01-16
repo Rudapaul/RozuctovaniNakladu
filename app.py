@@ -42,7 +42,7 @@ data_byty = [
 
 # Zobrazení a úprava dat v interaktivní tabulce
 df_byty = pd.DataFrame(data_byty)
-edited_byty = st.experimental_data_editor(df_byty, num_rows="dynamic")
+st.dataframe(df_byty)
 
 # ----------------------------- Odečty tepla -----------------------------
 st.header("Odečty tepla")

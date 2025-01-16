@@ -186,7 +186,7 @@ if st.button("Uložit data"):
 
 st.write("Doplňte další informace o spotřebě, radiátorech a nákladech.")
     # Data o bytech
-    data_bytu = []
+data_bytu = []
     for i in range(pocet_bytu):
         st.subheader(f"Byt {i + 1}")
         byt = {}

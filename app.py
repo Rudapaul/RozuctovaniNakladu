@@ -121,4 +121,43 @@ if st.button("Exportovat protokol do PDF"):
     pdf.output(pdf_file)
     st.success(f"PDF exportováno jako {pdf_file}.")
     with open(pdf_file, "rb") as f:
-    st.download_button("Stáhnout PDF", f, file_name=pdf_file)
+    
+    from fpdf import FPDF
+
+# Funkce pro vytvoření PDF protokolu
+def vytvorit_pdf(protokoly):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    for protokol in protokoly:
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        
+        pdf.cell(200, 10, txt="Protokol o rozúčtování nákladů", ln=True, align="C")
+        pdf.ln(10)
+
+        pdf.cell(100, 10, txt=f"Číslo bytu: {protokol['Číslo bytu']}", ln=True)
+        pdf.cell(100, 10, txt=f"Poloha: {protokol['Poloha']}", ln=True)
+        pdf.cell(100, 10, txt=f"Jméno bytu: {protokol['Jméno bytu']}", ln=True)
+        pdf.cell(100, 10, txt=f"Velikost bytu (m²): {protokol['Velikost (m2)']:.2f}", ln=True)
+        pdf.ln(5)
+
+        pdf.cell(100, 10, txt="Náklady:", ln=True)
+        pdf.cell(100, 10, txt=f"  Náklady na vytápění (Kč): {protokol['Náklady na vytápění (Kč)']:.2f}", ln=True)
+        pdf.cell(100, 10, txt=f"  Náklady na teplou vodu (Kč): {protokol['Náklady na teplou vodu (Kč)']:.2f}", ln=True)
+        pdf.cell(100, 10, txt=f"  Náklady na studenou vodu (Kč): {protokol['Náklady na studenou vodu (Kč)']:.2f}", ln=True)
+
+        pdf.ln(10)
+        pdf.cell(200, 10, txt="------------------------------", ln=True, align="C")
+        pdf.ln(10)
+
+    return pdf
+
+# Tlačítko pro export PDF
+if st.button("Exportovat protokol do PDF"):
+    pdf = vytvorit_pdf(protokoly)
+    pdf_file = "protokoly.pdf"
+    pdf.output(pdf_file)
+    st.success(f"PDF exportováno jako {pdf_file}.")
+    with open(pdf_file, "rb") as f:
+        st.download_button("Stáhnout PDF", f, file_name=pdf_file)
